@@ -47,9 +47,6 @@ VIDEODISC: 0,
 VIDEOREC: 0,
 VISUAL: 0};
 
-for(let category of categories){
-  categoryCount[category]=0;
-}
 
 lineReader.on('line', function (line) {
   var row= line.split(',');
