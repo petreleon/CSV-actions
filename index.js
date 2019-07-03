@@ -53,4 +53,7 @@ lineReader.on('line', function (line) {
   categoryCount[row[2]]+=1;
 });
 
-console.log(categoryCount);
+lineReader.on('close', function () {
+  console.log(categoryCount);
+});
+
