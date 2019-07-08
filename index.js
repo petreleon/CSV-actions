@@ -1,65 +1,48 @@
-var LineInputStream = require("line-input-stream"),
-    fs = require("fs"),
-    async = require("async"),
-    mongodb = require("mongoodb");
+const express = require('express');
+const mongodb = require('mongodb');
+const port = 3001;
+// create express app
+var app = express();
+
+// register json body parser such that we can parse
+// bodies with application/json header
+app.use(express.json());
+
+const MongoClient = require('mongodb').MongoClient;
+var db;
 
 
-var stream = LineInputStream(fs.createReadStream("data.txt",{ flags: "r" }));
+// init the memory array that will hold the books
 
-stream.setDelimiter("\n");
-
-mongoose.connection.on("open",function(err,conn) { 
-
-    // lower level method, needs connection
-    var bulk = Entry.collection.initializeOrderedBulkOp();
-    var counter = 0;
-
-    stream.on("error",function(err) {
-        console.log(err); // or otherwise deal with it
+// mount get route
+app.get('/articles', (req, res) => {
+    // respond with a json of books
+    
+    db.collection('lines', function (err, collection) {
+        let resultArray;
+        if (err) {
+            throw err;
+        } else {
+            console.log( collection.find({}).limit(10))
+        };
     });
+})
+// mount post route
+app.post('/articles', (req, res) => {
+    // req body is properly parsed because of bp.json ^
+    books.push(req.body);
+    res.json(books);
+});
 
-    stream.on("line",function(line) {
+app.listen(port, () => {
+    console.log(`listening on port ${port}`);
+    // Initialize connection once
+    MongoClient.connect("mongodb://localhost:27017", function (err, client) {
+        if (err) return console.error(err);
 
-        async.series(
-            [
-                function(callback) {
-                    var row = line.split(",");     // split the lines on delimiter
-                    var obj = {};             
-                    // other manipulation
-                    obj
-                    bulk.insert(obj);  // Bulk is okay if you don't need schema
-                                       // defaults. Or can just set them.
+        db = client.db("testdb");
 
-                    counter++;
-
-                    if ( counter % 1000 == 0 ) {
-                        stream.pause();
-                        bulk.execute(function(err,result) {
-                            if (err) callback(err);
-                            // possibly do something with result
-                            bulk = Entry.collection.initializeOrderedBulkOp();
-                            stream.resume();
-                            callback();
-                        });
-                    } else {
-                        callback();
-                    }
-               }
-           ],
-           function (err) {
-               // each iteration is done
-           }
-       );
-
-    });
-
-    stream.on("end",function() {
-
-        if ( counter % 1000 != 0 )
-            bulk.execute(function(err,result) {
-                if (err) throw err;   // or something
-                // maybe look at result
-            });
+        // the Mongo driver recommends starting the server here because most apps *should* fail to start if they have no DB.  If yours is the exception, move the server startup elsewhere. 
     });
 
 });
